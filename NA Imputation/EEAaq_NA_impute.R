@@ -21,7 +21,9 @@ EEAaq_NA_impute <- function(data, method = "SDEM") {
   h_data <- data %>% dplyr::filter(AveragingTime == "hour")
   #Aggiungo le variabili week, day e hour
   h_data <- h_data %>% 
-    dplyr::mutate(week = lubridate::week(DatetimeBegin), day = lubridate::wday(DatetimeBegin), hour = lubridate::hour(DatetimeBegin) + 1)
+    dplyr::mutate(week = lubridate::week(DatetimeBegin),
+                  day = lubridate::wday(DatetimeBegin),
+                  hour = lubridate::hour(DatetimeBegin) + 1)
   
   
   sel_st <- function(st, data, pollutant) {
@@ -37,7 +39,6 @@ EEAaq_NA_impute <- function(data, method = "SDEM") {
   #Funzione SDEM che verrà applicata ad ogni inquinante
   SDEM <- function(pollutant, data) {
     
-    
     #data <- data %>% mutate(week = week(DatetimeBegin), day = wday(DatetimeBegin), hour = hour(DatetimeBegin) + 1)
     sel_st <- function(st, data, pollutant) {
       
@@ -52,7 +53,6 @@ EEAaq_NA_impute <- function(data, method = "SDEM") {
     ex_st <- unlist(lapply(unique(data$AirQualityStationEoICode), sel_st, data, pollutant))
     
     data <- data %>% filter(AirQualityStationEoICode %notin% ex_st)
-    
     
     w_mean <- data %>% group_by(AirQualityStationEoICode, week) %>% summarise(mean = mean(get(pollutant), na.rm = T)) %>% 
       pivot_wider(names_from = AirQualityStationEoICode, values_from = mean)
@@ -94,7 +94,8 @@ EEAaq_NA_impute <- function(data, method = "SDEM") {
              d_eff = d_eff_gen(day, AirQualityStationEoICode), 
              h_eff = h_eff_gen(hour, AirQualityStationEoICode), 
              x_mean = x_mean_gen(week, day, hour, AirQualityStationEoICode)) %>% 
-      mutate(imps = x_mean + 0.5*w_eff + 0.5*d_eff + 0.5*h_eff) %>% pull(imps)
+      mutate(imps = x_mean + 0.5*w_eff + 0.5*d_eff + 0.5*h_eff) %>% 
+      pull(imps)
     
     
     
@@ -110,16 +111,9 @@ EEAaq_NA_impute <- function(data, method = "SDEM") {
   }
   
   LOCF <- function(pollutant, data) {
-    
     ex_st <- unlist(lapply(unique(data$AirQualityStationEoICode), sel_st, data, pollutant))
-    
     data <- data %>% filter(AirQualityStationEoICode %notin% ex_st)
-    
     na_data <- data %>% filter(is.na(get(pollutant))) 
-    
-     
-    
-    
   }
   
   
@@ -148,7 +142,7 @@ may_data <- data %>% dplyr::filter(DatetimeBegin >= as.Date("2019-01-05 00:00:00
 
 library(tictoc)
 tic()
-imp_data <- EEAaq_NA_impute(data = may_data)
+imp_data <- EEAaq_NA_impute(data = may_data, method = "SDEM")
 toc()
 
 
